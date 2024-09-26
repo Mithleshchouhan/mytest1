@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cast Video to Android TV</title>
+</head>
+<body>
+    <h1>Cast Video to Android TV</h1>
+    
+    <!-- Video element -->
+    <video id="myVideo" width="600" controls>
+        <source src="https://assets.codepen.io/6093409/hubspot-video-example.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+    <br/>
+
+    <!-- Cast Button -->
+    <button id="castButton">Cast to TV</button>
+
+    <!-- Google Cast Framework -->
+    <script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js"></script>
+    <script>
+        var castSession = null;
+
+        // Initialize Cast API when it's available
+        window['__onGCastApiAvailable'] = function(isAvailable) {
+            if (isAvailable) {
+                initializeCastApi();
+            }
+        };
+
+        function initializeCastApi() {
+            // Set options for Cast context
+            cast.framework.CastContext.getInstance().setOptions({
+                receiverApplicationId: chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
+                autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
+            });
+
+            // Attach event listener for the cast button
+            document.getElementById('castButton').addEventListener('click', function() {
+                castVideo();
+            });
+        }
+
+        function castVideo() {
+            const castContext = cast.framework.CastContext.getInstance();
+            const castSession = castContext.getCurrentSession();
+            
+            if (!castSession) {
+                // Request a Cast session if none exists
+                castContext.requestSession().then(function() {
+                    castVideoToTV();
+                });
+            } else {
+                castVideoToTV();
+            }
+        }
+
+        function castVideoToTV() {
+            const videoSrc = document.getElementById('myVideo').querySelector('source').src;
+            const mediaInfo = new chrome.cast.media.MediaInfo(videoSrc, 'video/mp4');
+            const request = new chrome.cast.media.LoadRequest(mediaInfo);
+
+            // Get the current Cast session and load the video
+            const castSession = cast.framework.CastContext.getInstance().getCurrentSession();
+            castSession.loadMedia(request).then(function() {
+                console.log('Video is casting to the TV');
+            }, function(error) {
+                console.error('Error casting: ', error);
+            });
+        }
+    </script>
+</body>
+</html>
